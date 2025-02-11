@@ -584,8 +584,13 @@ class Tello:
         """
         # Something it takes a looooot of time to take off and return a succesful takeoff.
         # So we better wait. Otherwise, it would give us an error on the following calls.
-        self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
-        self.is_flying = True
+        # Do not take off if battery is below say 20
+        z = self.get_battery()
+        if(z < 20):
+            self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
+            self.is_flying = True
+        else:
+            raise ValueError("Battery is below 20%, Please replace battery!")
 
     def land(self):
         """Automatic landing.
