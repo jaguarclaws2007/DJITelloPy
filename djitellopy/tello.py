@@ -5,6 +5,7 @@
 import logging
 import socket
 import time
+import threading
 from datetime import datetime
 from collections import deque
 from threading import Thread, Lock
@@ -110,6 +111,10 @@ class Tello:
         self.retry_count = retry_count
         self.last_received_command_timestamp = time.time()
         self.last_rc_control_timestamp = time.time()
+        
+        #setup keep_alive_thread
+        self.keep_alive_thread = threading.Thread(target=keep_alive, args=(t, stop_event), daemon=True) # create keep_alive thread
+        self.stop_event = threading.Event() # create stop event
 
         if not threads_initialized:
             # Run Tello command responses UDP receiver on background
@@ -557,11 +562,25 @@ class Tello:
 
             if not self.get_current_state():
                 raise TelloException('Did not receive a state packet from the Tello')
+    
+    def keep_alive(self):
+        while not self.stop_event.is_set():
+            self.send_rc_control(0, 0, 0, 0) # keep drone alive
+            sleep(3) # send command 3 seconds
 
-    def send_keepalive(self):
+    def start_keepalive(self):
         """Send a keepalive packet to prevent the drone from landing after 15s
         """
-        self.send_control_command("keepalive")
+        if not self.stop_event.is_set():
+            self.stop_event.clear()
+            self.keep_alive_thread = threading.Thread(target=self.keep_alive, daemon=True)
+            self.keep_alive_thread.start() # start keep_alive thread
+    
+    def stop_keepalive(self):
+        """Send a keepalive packet to prevent the drone from landing after 15s
+        """
+        self.stop_event.set() # set stop event
+        self.keep_alive_thread.join() # join keep_alive thread
 
     def turn_motor_on(self):
         """Turn on motors without flying (mainly for cooling)
@@ -584,7 +603,7 @@ class Tello:
         """
         # Something it takes a looooot of time to take off and return a succesful takeoff.
         # So we better wait. Otherwise, it would give us an error on the following calls.
-        # Do not take off if battery is below say 20
+        # Do not take off if battery is below 20%
         z = self.get_battery()
         if(z < 20):
             self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
