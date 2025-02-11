@@ -590,7 +590,7 @@ class Tello:
             self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
             self.is_flying = True
         else:
-            raise ValueError("Battery is below 20%, Please replace battery!")
+            raise TelloException('Failed to grab video frames from video stream')
 
     def land(self):
         """Automatic landing.
