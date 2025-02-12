@@ -113,7 +113,7 @@ class Tello:
         self.last_rc_control_timestamp = time.time()
         
         #setup keep_alive_thread
-        self.keep_alive_thread = threading.Thread(target=keep_alive, args=(t, stop_event), daemon=True) # create keep_alive thread
+        self.keep_alive_thread = threading.Thread(target=self.keep_alive_internal, daemon=True)
         self.stop_event = threading.Event() # create stop event
 
         if not threads_initialized:
@@ -487,6 +487,13 @@ class Tello:
 
         self.LOGGER.info("Send command (no response expected): '{}'".format(command))
         client_socket.sendto(command.encode('utf-8'), self.address)
+        
+    def send_command_without_return_without_log(self, command: str):
+        """Send command to Tello without expecting a response.
+        Internal method, you normally wouldn't call this yourself.
+        """
+        # Commands very consecutive makes the drone not respond to them. So wait at least self.TIME_BTW_COMMANDS seconds
+        client_socket.sendto(command.encode('utf-8'), self.address)
 
     def send_control_command(self, command: str, timeout: int = RESPONSE_TIMEOUT) -> bool:
         """Send control command to Tello and wait for its response.
@@ -563,24 +570,83 @@ class Tello:
             if not self.get_current_state():
                 raise TelloException('Did not receive a state packet from the Tello')
     
-    def keep_alive(self):
+    def keep_alive_internal(self):
+        """Internal method to send keep-alive packets every 3 seconds.
+        Internal method, you normally wouldn't call this yourself.
+        """
         while not self.stop_event.is_set():
-            self.send_rc_control(0, 0, 0, 0) # keep drone alive
-            sleep(3) # send command 3 seconds
+            try:
+                self.send_rc_control(0, 0, 0, 0, False)  # Keep drone alive
+            except Exception as e:
+                print(f"Warning: Failed to send keep-alive command. Error: {e}")
+                Tello.LOOGER.debug(f"Warning: Failed to send keep-alive command. Error: {e}")
+                break  # exit the thread if sending fails
+            time.sleep(3)  # Send command every 3 seconds
+    def keep_alive(self, y="auto", x=None):
+        """
+        Call keep-alive function.
+
+        Parameters:
+        - y (str): "auto" for automatic, "time" for timed, "start" to start, and "stop" to stop.
+        - x (optional): 
+          - In "auto": If provided, it is used as an input prompt. 
+          - In "time": Expects a float/int for delay in seconds. 
+
+        Returns:
+        - The user input if `x` is provided in "auto" mode.
+        """
+
+        if y == "auto":
+            self.start_keepalive()
+            if x is None:
+                try:
+                    input("Press Enter to continue...")
+                except KeyboardInterrupt:
+                    print("\nKeep-alive interrupted.")
+            else:
+                try:
+                    res = input(x)
+                except KeyboardInterrupt:
+                    print("\nKeep-alive interrupted.")
+                    res = None
+                self.stop_keepalive()
+                return res
+
+        elif y == "time":
+            if isinstance(x, (int, float)):
+                self.start_keepalive()
+                time.sleep(x)
+                self.stop_keepalive()
+            else:
+                raise ValueError("In 'time' mode, x must be an integer or float representing seconds.")
+
+        elif y == "start":
+            self.start_keepalive()
+        elif y == "stop":
+            self.stop_keepalive()
+        else:
+            raise ValueError(f"Invalid mode '{mode}'. Use 'auto', 'time', or 'manual'.")
 
     def start_keepalive(self):
-        """Send a keepalive packet to prevent the drone from landing after 15s
+        """Start a thread that sends keep-alive packets.
+        Internal method, you normally wouldn't call this yourself.
         """
-        if not self.stop_event.is_set():
-            self.stop_event.clear()
-            self.keep_alive_thread = threading.Thread(target=self.keep_alive, daemon=True)
-            self.keep_alive_thread.start() # start keep_alive thread
+        if self.keep_alive_thread and self.keep_alive_thread.is_alive():
+            print("Keep-alive thread is already running.")
+            return
+
+        self.stop_event.clear()
+        self.keep_alive_thread = threading.Thread(target=self.keep_alive_internal, daemon=True)
+        self.keep_alive_thread.start()
     
     def stop_keepalive(self):
-        """Send a keepalive packet to prevent the drone from landing after 15s
+        """Stop the keep-alive thread.
+        Internal method, you normally wouldn't call this yourself.
         """
-        self.stop_event.set() # set stop event
-        self.keep_alive_thread.join() # join keep_alive thread
+        self.stop_event.set()
+        if self.keep_alive_thread:
+            self.keep_alive_thread.join(timeout=5)  # Prevent blocking indefinitely
+            self.keep_alive_thread = None  # Reset thread reference
 
     def turn_motor_on(self):
         """Turn on motors without flying (mainly for cooling)
@@ -604,12 +670,16 @@ class Tello:
         # Something it takes a looooot of time to take off and return a succesful takeoff.
         # So we better wait. Otherwise, it would give us an error on the following calls.
         # Do not take off if battery is below 20% (or bp)
-        z = self.get_battery()
-        if(z > bp):
+        if(not(bp == False)):
+            z = self.get_state_field('battery')
+            if(z > bp):
+                self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
+                self.is_flying = True
+            else:
+                raise TelloException(f"Failed to takeoff. Reason: Aborted, Battery is below threshold: {bp}. Current battery reading is {z}")
+        else:
             self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
             self.is_flying = True
-        else:
-            raise TelloException(f"Failed to takeoff. Reason: Aborted, Battery is below threshold: {bp}. Current battery reading is {z}")
 
     def land(self):
         """Automatic landing.
@@ -856,7 +926,7 @@ class Tello:
         self.send_control_command("speed {}".format(x))
 
     def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int,
-                        yaw_velocity: int):
+                        yaw_velocity: int, log: bool = True):
         """Send RC control via four channels. Command is sent every self.TIME_BTW_RC_CONTROL_COMMANDS seconds.
         Arguments:
             left_right_velocity: -100~100 (left/right)
@@ -875,7 +945,10 @@ class Tello:
                 clamp100(up_down_velocity),
                 clamp100(yaw_velocity)
             )
-            self.send_command_without_return(cmd)
+            if(log == True):
+                self.send_command_without_return(cmd)
+            else:
+                self.send_command_without_return_without_log(cmd)
 
     def set_wifi_credentials(self, ssid: str, password: str):
         """Set the Wi-Fi SSID and password. The Tello will reboot afterwords.
