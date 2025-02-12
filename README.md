@@ -5,18 +5,23 @@ DJITelloPy-UCAS is a modified version of [DJITelloPy](https://github.com/damiafu
 ## Installation  
 
 Clone the repository and install dependencies:
-`git clone https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git
+```sh
+git clone https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git
 cd DJITelloPy-UCAS
-pip install -r requirements.txt`
+pip install -r requirements.txt
+```
 
 Or install directly via pip:
-`pip install git+https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git `
+```sh
+pip install git+https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git
+```
 
 ## Differences from the Original DJITelloPy
 
 ### Takeoff
-
+```python
 drone.takeoff(battery_threshold=False)
+```
 
 If battery_threshold is False, the drone will take off without checking battery levels.
 
@@ -30,8 +35,9 @@ If left blank, the default threshold (20%) is used.
 There are two ways to maintain the connection to the drone: automatic and manual.
 
 #### Automatic Keep-Alive
-
+```python
 drone.keepalive()
+```
 
 This method starts the keep-alive process and waits for the user to press Enter.
 
@@ -40,8 +46,10 @@ Once Enter is pressed, the keep-alive process stops.
 
 #### Manual Keep-Alive
 
+```python
 drone.start_keepalive()  # Start keep-alive
 drone.stop_keepalive()   # Stop keep-alive
+```
 
 start_keepalive() begins sending keep-alive packets.
 
@@ -55,5 +63,3 @@ For additional commands and usage, refer to the original DJITelloPy documentatio
 ## License
 
 This project follows the same license as DJITelloPy.
-
-
