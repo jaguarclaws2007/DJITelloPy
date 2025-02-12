@@ -578,8 +578,7 @@ class Tello:
             try:
                 self.send_rc_control(0, 0, 0, 0, False)  # Keep drone alive
             except Exception as e:
-                print(f"Warning: Failed to send keep-alive command. Error: {e}")
-                Tello.LOOGER.debug(f"Warning: Failed to send keep-alive command. Error: {e}")
+                Tello.LOGGER.debug(f"Warning: Failed to send keep-alive command. Error: {e}")
                 break  # exit the thread if sending fails
             time.sleep(3)  # Send command every 3 seconds
     def keep_alive(self, y="auto", x=None):
@@ -602,12 +601,12 @@ class Tello:
                 try:
                     input("Press Enter to continue...")
                 except KeyboardInterrupt:
-                    print("\nKeep-alive interrupted.")
+                    Tello.LOGGER.debug("\nKeep-alive interrupted.")
             else:
                 try:
                     res = input(x)
                 except KeyboardInterrupt:
-                    print("\nKeep-alive interrupted.")
+                    Tello.LOGGER.debug("\nKeep-alive interrupted.")
                     res = None
                 self.stop_keepalive()
                 return res
@@ -625,14 +624,14 @@ class Tello:
         elif y == "stop":
             self.stop_keepalive()
         else:
-            raise ValueError(f"Invalid mode '{mode}'. Use 'auto', 'time', or 'manual'.")
+            raise ValueError(f"Invalid mode '{y}'. Use 'auto', 'time', or 'manual'.")
 
     def start_keepalive(self):
         """Start a thread that sends keep-alive packets.
         Internal method, you normally wouldn't call this yourself.
         """
-        if self.keep_alive_thread and self.keep_alive_thread.is_alive():
-            print("Keep-alive thread is already running.")
+        if getattr(self, "keep_alive_thread", None) and self.keep_alive_thread.is_alive():
+            Tello.LOGGER.debug("Keep-alive thread is already running.")
             return
 
         self.stop_event.clear()
@@ -670,9 +669,9 @@ class Tello:
         # Something it takes a looooot of time to take off and return a succesful takeoff.
         # So we better wait. Otherwise, it would give us an error on the following calls.
         # Do not take off if battery is below 20% (or bp)
-        if(not(bp == False)):
+        if bp is not False:
             z = self.get_state_field('battery')
-            if(z > bp):
+            if z > bp:
                 self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
                 self.is_flying = True
             else:
