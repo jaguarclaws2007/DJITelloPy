@@ -4,14 +4,13 @@ DJITelloPy-UCAS is a modified version of [DJITelloPy](https://github.com/damiafu
 
 ## Installation  
 
-Clone the repository and install dependencies:  
-
-git clone https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git
+Clone the repository and install dependencies:
+`git clone https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git
 cd DJITelloPy-UCAS
-pip install -r requirements.txt
+pip install -r requirements.txt`
 
 Or install directly via pip:
-pip install git+https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git
+`pip install git+https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git `
 
 ## Differences from the Original DJITelloPy
 
