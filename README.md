@@ -16,14 +16,15 @@ Or install directly via pip:
 pip install git+https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git
 ```
 
-*If you have already installed djitellopy, run:
+* If you already have DJITelloPy installed, it's recommended to uninstall it first to avoid conflicts with the original library, as both share the same name. Run one of the following commands:
 ```sh
 pip uninstall djitellopy
 ```
-or
+or (replace pip3 with the version of pip you used to install djitellopy)
 ```sh
 pip3 uninstall djitellopy
 ```
+
 
 ## Differences from the Original DJITelloPy
 
