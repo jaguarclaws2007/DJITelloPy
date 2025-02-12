@@ -58,7 +58,7 @@ stop_keepalive() stops the keep-alive process.
 
 ## Documentation
 
-For additional commands and usage, refer to the original DJITelloPy documentation.
+For additional commands and usage, refer to the original DJITelloPy [documentation](https://djitellopy.readthedocs.io/en/latest/tello).
 
 ## License
 
