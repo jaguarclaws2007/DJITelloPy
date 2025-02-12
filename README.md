@@ -16,6 +16,15 @@ Or install directly via pip:
 pip install git+https://github.com/jaguarclaws2007/DJITelloPy-UCAS.git
 ```
 
+*If you have already installed djitellopy, run:
+```sh
+pip uninstall djitellopy
+```
+or
+```sh
+pip3 uninstall djitellopy
+```
+
 ## Differences from the Original DJITelloPy
 
 ### Takeoff
