@@ -10,7 +10,7 @@ long_description = long_description.replace("](examples/", "]({}/examples/".form
 setuptools.setup(
     name='tellopy',
     packages=['tellopy'],
-    version='1.0.1,
+    version='1.0.1',
     license='MIT',
     description='Tello drone library including support for video streaming, swarms, state packets and more',
     long_description=long_description,
