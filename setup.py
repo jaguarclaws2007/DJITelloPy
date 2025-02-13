@@ -8,8 +8,8 @@ repo_code_url = "https://github.com/damiafuentes/DJITelloPy/tree/master"
 long_description = long_description.replace("](examples/", "]({}/examples/".format(repo_code_url))
 
 setuptools.setup(
-    name='djitellopy',
-    packages=['djitellopy'],
+    name='tellopy',
+    packages=['tellopy'],
     version='2.5.0',
     license='MIT',
     description='Tello drone library including support for video streaming, swarms, state packets and more',
