@@ -36,7 +36,7 @@ pip3 uninstall djitellopy  # Replace 'pip3' with the version you used to install
 Before running the following examples, ensure your drone is set up like this:  
 
 ```python
-from djitellopy import Tello
+from tellopy import Tello
 from time import sleep  
 
 # Initialize the drone  
