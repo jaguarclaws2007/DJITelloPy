@@ -670,7 +670,7 @@ class Tello:
         # So we better wait. Otherwise, it would give us an error on the following calls.
         # Do not take off if battery is below 20% (or bp)
         if bp is not False:
-            z = self.get_state_field('battery')
+            z = self.query_battery()
             if z > bp:
                 self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
                 self.is_flying = True
